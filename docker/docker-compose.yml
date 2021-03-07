@@ -1,0 +1,55 @@
+version: "3"
+
+services:
+  flask:
+    container_name: flask
+    build:
+      dockerfile: ./docker/app/Dockerfile
+      context: ../.
+    working_dir: /app
+    depends_on:
+      - database
+    volumes:
+      - ../src:/app
+    ports:
+      - "5000:5000"
+    tty: true
+    environment:
+      TZ: Asia/Tokyo
+      FLASK_APP: app.py
+      FLASK_ENV: development
+      MYSQL_ROOT_PASSWORD: root
+      MYSQL_DATABASE: door_out_db
+      MYSQL_USER: door_out_user
+      MYSQL_PASSWORD: w6lCQ2THZVXDBMAWBc1xlpSuGEKEwzFd
+      DATABASE_CONTAINER_NAME: database
+
+    command: wait-for-it.sh database:3306 --timeout=30 -- python app.py
+    networks:
+      - app-db-network
+    restart: always
+
+  database:
+    container_name: database
+    build: ./maria_db/
+    image: mariadb:10.5
+    environment:
+      MYSQL_ROOT_PASSWORD: root
+      MYSQL_DATABASE: door_out_db
+      MYSQL_USER: door_out_user
+      MYSQL_PASSWORD: w6lCQ2THZVXDBMAWBc1xlpSuGEKEwzFd
+    ports:
+      - "3306:3306"
+    tty: true
+    command:
+      - mysqld
+      - --character-set-server=utf8mb4
+      - --collation-server=utf8mb4_unicode_ci
+    networks:
+      - app-db-network
+    restart: always
+
+
+networks:
+  app-db-network:
+    driver: bridge
